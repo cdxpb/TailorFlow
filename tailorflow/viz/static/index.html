@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TailorFlow Sampler</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>👗</text></svg>">
+<script type="importmap">{"imports":{"three":"/static/vendor/three.module.js","three/addons/controls/OrbitControls.js":"/static/vendor/OrbitControls.js"}}</script>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span>TailorFlow <em>sampler</em></div>
+  <div class="globals">
+    <button class="icon" id="themeBtn" title="light / dark">Dark</button>
+    <button class="icon" id="resetAll" title="forget everything and start from a new body">Reset</button>
+  </div>
+  <div class="status" id="status"><span class="spin" hidden></span><span id="statusText">loading model…</span></div>
+</header>
+
+<main>
+  <!-- ============================================================ column 1: actions -->
+  <aside id="tools">
+    <nav class="tabs" id="tabs">
+      <button data-tab="sample"><i>1</i><span>Sample</span></button>
+      <button data-tab="occ"><i>2</i><span>Edit</span></button>
+      <button data-tab="transfer"><i>3</i><span>Transfer</span></button>
+    </nav>
+
+    <!-- ------------------------------------------------ sample -->
+    <section class="pane" data-pane="sample">
+      <div class="field"><label>Class</label><div class="seg wrap" id="classSeg"></div></div>
+
+      <div class="pair">
+        <div class="field"><label>Samples</label><div class="seg" id="countSeg"></div></div>
+        <div class="field"><label>Points</label><select id="level"></select></div>
+      </div>
+
+      <div class="group">
+        <label class="check"><input type="checkbox" id="useOcc"><span></span>Condition on coverage</label>
+        <div class="sub" id="occOpts" hidden>
+          <div class="row split">
+            <button class="btn" id="occRandom" title="draw a random train-set mask of this class">Randomize</button>
+            <button class="btn" id="paintToggle" title="paint the coverage on the body">Paint on body</button>
+          </div>
+          <p class="note" id="occSrcNote"></p>
+        </div>
+      </div>
+
+      <div class="field"><label>Seed</label>
+        <div class="seedbox"><input type="number" id="seed" value="0"><button class="mini" id="seedLock" title="lock the seed: the next samples redraw the same garments"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path id="shackle" d="M8 11V7a4 4 0 0 1 7-2.5"/></svg></button></div>
+        <p class="note" id="seedNote">Sample <i>k</i> uses seed + <i>k</i>. Lock the seed to redraw the same set.</p>
+      </div>
+
+      <details><summary>Sampler <span class="hint" id="samplerHint"></span></summary>
+        <div class="row"><label>Solver</label><div class="seg" id="solverSeg"></div></div>
+        <div class="slider"><label>Steps<b>64</b></label><input type="range" id="steps" min="16" max="128" step="16" value="64"></div>
+        <div class="slider"><label>Guidance<b>1.0</b></label><input type="range" id="cfg" min="1" max="3" step="0.1" value="1"></div>
+        <p class="note" id="lvlNote" hidden>Above 4 096 points the prior samples in partitions of 4 096, which supports guidance 1 only.</p>
+      </details>
+
+      <div class="foot">
+        <label class="check"><input type="checkbox" id="appendSamples"><span></span>Keep previous samples</label>
+        <button class="btn primary" id="doSample"><span>Sample</span><kbd>S</kbd></button>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ edit -->
+    <section class="pane" data-pane="occ" hidden>
+      <div class="target" id="occTarget"></div>
+
+      <div class="field"><label>Start from</label>
+        <div class="row split">
+          <button class="btn" id="occFromMesh" title="raycast the garment's mesh onto the body, as the dataset does">Garment</button>
+          <button class="btn" id="occFromCond" title="the mask this garment was conditioned on">Its condition</button>
+        </div>
+        <div class="row split">
+          <button class="btn ghost" id="occRandomEdit" title="a random train mask of this class">Random</button>
+          <button class="btn ghost" id="occClear">Clear</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <button class="btn" id="editPaint">Paint on body</button>
+      </div>
+
+      <p class="note" id="occHint"></p>
+
+      <div class="row" title="Strong adds guidance on the mask: tighter fit to the paint, about twice as slow, cloth slightly closer to the body"><label>Mask adherence</label><div class="seg" id="adhereSeg"></div></div>
+
+      <details><summary>How the edit works</summary>
+        <p class="note">One edit trims and grows. Cloth more than 8 cm from any painted change is kept exactly; the rest is regenerated by the prior under the new mask and blended into the kept cloth, so the join has no gap; new cloth the VAE judges outside the paint is dropped, so one-sided edits stay one-sided. The edit appears as a new card next to the original.</p>
+      </details>
+
+      <div class="foot">
+        <button class="btn primary" id="doEdit">Apply to this garment</button>
+        <button class="btn" id="doOccSample">Sample new garments with it</button>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ transfer -->
+    <section class="pane" data-pane="transfer" hidden>
+      <div class="target" id="tTarget"></div>
+      <div class="field"><label>Number of bodies</label><div class="seg" id="tCountSeg"></div></div>
+      <div class="field"><label>Bodies</label><div class="seg" id="tSpaceSeg"></div></div>
+
+      <details><summary>What transfer does</summary>
+        <p class="note">The same latent decoded on random bodies. Pick a card to inspect it; the body panel under the viewport then edits that body and the garment follows.</p>
+      </details>
+
+      <div class="foot">
+        <button class="btn primary" id="doTransfer">Transfer<kbd>T</kbd></button>
+      </div>
+    </section>
+
+    <footer class="tips"><span><kbd>S</kbd> sample</span><span><kbd>T</kbd> transfer</span><span><kbd>M</kbd> mesh</span><span><kbd>B</kbd> body</span><span><kbd>F</kbd> frame</span><span><kbd>←</kbd><kbd>→</kbd> cards</span></footer>
+  </aside>
+
+  <!-- ============================================================ column 2: viewport + body -->
+  <section id="center">
+    <div id="stage">
+      <canvas id="gl"></canvas>
+      <div id="busyBar" hidden><span class="spin"></span><span id="busyLabel">working…</span><b id="busyTime"></b><button id="busyCancel" title="stop this action">×</button></div>
+      <div class="overlay top-left" id="viewTitle"></div>
+      <div class="overlay top">
+        <div class="seg mini-seg" id="showSeg"></div>
+        <div class="seg mini-seg" id="colorSeg"></div>
+        <button class="icon" id="physBtn" title="cloth physics: the mesh drapes and waves as you spin the view" hidden>Physics</button>
+        <button class="icon" id="toggleBody" title="body visibility">Body</button>
+        <button class="icon" id="lookBtn" title="colour, finish, body opacity">Look</button>
+        <button class="icon" id="frameBtn" title="frame the view (F)">Frame</button>
+      </div>
+      <div class="popover" id="lookPop" hidden>
+        <div class="field"><label>Garment colour</label>
+          <div class="swatches" id="swatches"></div>
+          <div class="pickrow"><input type="color" id="colorPick" value="#5b7cfa"><span class="hint" id="colorHex">#5b7cfa</span></div>
+        </div>
+        <div class="row"><label>Finish</label><div class="seg wrap two" id="finishSeg"></div></div>
+        <label class="check"><input type="checkbox" id="wire"><span></span>Wireframe</label>
+        <div class="slider"><label>Body opacity<b>30%</b></label><input type="range" id="bodyOpacity" min="0" max="100" step="5" value="30"></div>
+        <div class="row split">
+          <button class="btn" id="lookSave">Save as default</button>
+          <button class="btn ghost" id="lookReset">Restore</button>
+        </div>
+      </div>
+      <div class="paintpanel" id="paintTools" hidden>
+        <div class="row"><label>Tool</label><div class="seg" id="brushSeg"></div></div>
+        <div class="slider"><label>Radius<b>6 cm</b></label><input type="range" id="brushR" min="2" max="20" step="1" value="6"></div>
+        <label class="check" title="paint every body vertex under the brush, front and back (a limb's whole circumference)"><input type="checkbox" id="brushThrough" checked><span></span>Through body</label>
+        <label class="check" title="also paint the mirrored vertex on the other side of the body"><input type="checkbox" id="brushMirror"><span></span>Mirror left / right</label>
+      </div>
+      <div class="overlay bottom" id="stats"></div>
+      <div class="overlay bottom-right">
+        <button class="btn primary" id="meshActive" title="Screened-Poisson mesh of the active garment (M)">Mesh this garment</button>
+      </div>
+      <div class="hintline" id="paintHint" hidden>drag to paint · <b>shift</b>-drag to erase · hold <b>space</b> or pick <b>Orbit</b> to rotate · <b>esc</b> to exit</div>
+    </div>
+
+    <div id="bodyBar">
+      <div class="bodyhead">
+        <h3>Body <span class="hint" id="bodyOf"></span></h3>
+        <div class="seg" id="spaceSeg"></div>
+        <button class="btn" id="randBody">Randomize<kbd>B</kbd></button>
+        <button class="btn ghost" id="resetBody">Mean shape</button>
+      </div>
+      <div id="betaList"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ column 3: previews -->
+  <aside id="preview">
+    <div class="phead">
+      <nav class="seg" id="setSeg"></nav>
+      <button class="icon" id="clearSet" title="remove these cards">Clear</button>
+    </div>
+    <div id="cards"></div>
+    <p class="empty" id="emptyNote">Samples appear here. Pick one to inspect it in the viewport.</p>
+    <div class="pfoot">
+      <button class="btn" id="meshAllCards" title="Mesh every card in the selected set that is not meshed yet">Mesh all garments</button>
+    </div>
+  </aside>
+</main>
+
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+chamfer_cuda.cpp and chamfer3D.cu are copied unmodified from ChamferDistancePytorch (chamfer3D),
+https://github.com/ThibaultGROUEIX/ChamferDistancePytorch, MIT License (see LICENSE).

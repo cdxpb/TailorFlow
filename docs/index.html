@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TailorFlow</title>
+<meta name="description" content="TailorFlow: a unified and expressive generative model for 3D clothing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Mono&display=swap">
+<style>
+/* Layout: one centred reading column for text, a wider column for figures; plain light page like a paper site. */
+:root {
+  --bg: #ffffff;
+  --fg: #1c2229;
+  --muted: #5b6672;
+  --rule: #e3e7ec;
+  --soft: #f4f6f8;
+  --accent: #1f5f99;
+  --btn: #1d2733;
+  --btn-fg: #ffffff;
+  --display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --body: "Source Sans 3", "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --text-w: 46rem;
+  --fig-w: 64rem;
+  color-scheme: light;
+}
+body { background: var(--bg); color: var(--fg); font: 400 1.0625rem/1.6 var(--body); }
+.page { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 3rem 4rem; display: grid; gap: 3.25rem; justify-items: center; }
+.text { width: 100%; max-width: var(--text-w); }
+.wide { width: 100%; max-width: var(--fig-w); }
+h1, h2 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.9rem, 4.2vw, 2.75rem); line-height: 1.15; text-align: center; }
+h1 .name { display: block; font-size: 1.15em; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; line-height: 1.25; }
+p { margin: 0; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+header { display: grid; gap: 1.1rem; justify-items: center; text-align: center; }
+.authors { font-size: 1.1rem; }
+.venue { color: var(--muted); }
+.links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+.links a { background: var(--btn); color: var(--btn-fg); text-decoration: none; padding: 0.45rem 1.05rem; border-radius: 999px; font-weight: 600; font-size: 0.95rem; }
+.links a:hover { background: var(--accent); }
+section { display: grid; gap: 1rem; justify-items: center; }
+section > .text { display: grid; gap: 0.75rem; }
+figure { margin: 0; display: grid; gap: 0.6rem; }
+figure img, figure video { width: 100%; height: auto; display: block; }
+figcaption { color: var(--muted); font-size: 0.95rem; line-height: 1.5; max-width: var(--text-w); justify-self: center; text-align: center; }
+.hero { display: grid; gap: 1.25rem; align-items: center; }
+.hero.side { grid-template-columns: 3fr 2fr; }
+@media (max-width: 760px) { .hero.side { grid-template-columns: 1fr; } }
+.video-slot { aspect-ratio: 16 / 9; max-width: 100%; border: 2px dashed var(--rule); border-radius: 8px; display: grid; place-items: center; color: var(--muted); background: var(--soft); }
+.stack { display: grid; gap: 1.75rem; }
+.comp { display: flex; gap: 1.25rem; align-items: end; }
+.comp figure { min-width: 0; flex: var(--a) 1 calc(var(--rl) + 0.35rem); }
+@media (max-width: 760px) { .comp { flex-direction: column; align-items: stretch; } }
+.comp figcaption { font-size: 0.9rem; }
+.comp + .stack { margin-top: 1.75rem; }
+/* Labelled figure: column labels above the image and row labels to its left, placed at the cells' centres. */
+.lab { --rl: 1.3rem; display: grid; grid-template-columns: var(--rl) minmax(0, 1fr); grid-template-rows: auto auto; gap: 0.15rem 0.35rem; }
+.lab.nr { --rl: 0rem; column-gap: 0; }
+.lab .cols { grid-column: 2; grid-row: 1; position: relative; height: 1.5em; }
+.lab .cols.two { height: 2.9em; }
+.lab .rows { grid-column: 1; grid-row: 2; position: relative; }
+.lab img { grid-column: 2; grid-row: 2; }
+.lab span { position: absolute; white-space: nowrap; font-size: clamp(0.62rem, 1.6vw, 0.85rem); line-height: 1.2; color: var(--muted); }
+.lab .us { color: var(--fg); font-weight: 600; }
+.lab .cols span { left: var(--x); bottom: 0.2em; transform: translateX(-50%); }
+.lab .cols span.hi { bottom: 1.6em; color: var(--fg); font-weight: 600; }
+.lab .rows span { top: var(--y); left: 50%; writing-mode: vertical-rl; transform: translate(-50%, -50%) rotate(180deg); }
+.lab > figcaption { grid-column: 1 / -1; grid-row: 3; margin-top: 0.45rem; }
+.tables { display: grid; gap: 2rem; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; margin-inline: auto; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 0.35rem 0.7rem; text-align: center; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { border-bottom: 1px solid var(--fg); font-weight: 600; }
+thead tr:first-child th { border-bottom: 1px solid var(--rule); }
+tbody tr.ours td { font-weight: 600; background: var(--soft); }
+tbody tr.ref td { color: var(--muted); border-top: 1px solid var(--rule); }
+.tables figcaption { margin-top: 0.4rem; }
+.bib { position: relative; }
+pre { margin: 0; background: var(--soft); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem 1.1rem; overflow-x: auto; font: 0.85rem/1.55 var(--mono); }
+.copy { position: absolute; top: 0.5rem; right: 0.5rem; font: 600 0.8rem var(--body); background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 6px; padding: 0.3rem 0.65rem; cursor: pointer; }
+footer { color: var(--muted); font-size: 0.85rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="text">
+    <h1><span class="name">TailorFlow</span>A Unified and Expressive Generative Model for 3D Clothing</h1>
+    <!-- Authors, venue and links: uncomment and fill in.
+    <p class="authors">Anonymous Authors</p>
+    <p class="venue">Under review</p>
+    <nav class="links" aria-label="Paper links">
+      <a href="#">Paper</a>
+      <a href="#">Supplementary</a>
+      <a href="#">arXiv</a>
+      <a href="https://github.com/cdxpb/TailorFlow">Code</a>
+    </nav>
+    -->
+  </header>
+
+  <!-- Teaser + video. The video sits below the teaser; add class "side" to .hero to put it on the right. -->
+  <section class="wide">
+    <div class="hero">
+      <figure>
+        <img src="static/images/teaser.jpg" alt="Left: fifteen generated garments of five classes on different bodies. Right: a dress morphing into a jumpsuit, a tank top growing long sleeves, and one jumpsuit on four body shapes.">
+        <figcaption>One model generates dresses, jumpsuits, skirts, trousers and tops for any body (left), and lets you edit them: change the garment type, grow sleeves, or change the body underneath (right).</figcaption>
+      </figure>
+      <!-- Video: uncomment one of these.
+      <video src="static/videos/teaser.mp4" controls muted loop playsinline></video>
+      <iframe src="https://www.youtube.com/embed/VIDEO_ID" style="width:100%;aspect-ratio:16/9;border:0" allowfullscreen></iframe>
+      -->
+    </div>
+  </section>
+
+  <section class="text">
+    <h2>Abstract</h2>
+    <p>Realistic and editable modeling of human avatars is crucial for applications like telepresence, entertainment, and virtual try-on. However, existing generative methods typically model clothing and the human body as a single surface, limiting their ability to represent layered clothing realistically. We introduce TailorFlow, a hierarchical latent point flow model for unified and expressive generative modeling of 3D clothing. TailorFlow is the first model capable of representing clothing of all topologies within a single framework. It can generate diverse clothing shapes conditioned on the clothing style, underlying body shape, and fine-grained details like sleeve length and hem length. Thanks to our body-aware encoding, TailorFlow produces clothing that is well-aligned to the body and respects the layering order of body and clothing. We make the latent space coverage-aware: the model is trained to trim and grow garments, so clothing can be edited by painting its occupancy on the body. TailorFlow can be applied to inverse problems, such as fitting layered clothing to scans with occluded garments.</p>
+  </section>
+
+  <section>
+    <div class="text">
+      <h2>How it works</h2>
+      <p>A body-aware VAE encodes each garment, given as a point cloud, into a global shape code and a latent point cloud on a canonical body. The decoder places the garment on any body and any coverage. A rectified-flow prior samples both latents for a chosen garment class in 64 steps, and the decoded points are meshed with screened Poisson reconstruction.</p>
+    </div>
+    <figure class="wide">
+      <img src="static/images/method.jpg" alt="Method overview: shape latent encoder and latent point encoder feed a body-conditioned decoder; a flow prior maps noise to the two latents.">
+      <figcaption>The VAE (left) learns a global latent z and a latent point cloud h; the decoder is conditioned on the body x<sub>b</sub> and its clothing coverage o. A flow (right) learns to generate z and h from noise.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="text">
+      <h2>Interpolate between any two garments</h2>
+      <p>Garments morph smoothly and at an even pace, within a class and across classes: straps appear on strapless dresses, necklines rise, sleeves and hems grow, skirts flare, and a dress can split into a jumpsuit.</p>
+    </div>
+    <figure class="wide">
+      <img src="static/images/interp.jpg" alt="Sixteen rows of five-step interpolations across dresses, trousers, skirts, jumpsuits and tops.">
+      <figcaption>Each row goes from one generated garment (left) to another (right) on a fixed body.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="text">
+      <h2>Grow and trim by painting coverage</h2>
+      <p>Paint where the garment should cover the body. TailorFlow keeps the cloth away from the edit unchanged and generates only what is new, so sleeves, hems, shoulder straps and necklines change with a clean seam, down to turning a jumpsuit into trousers.</p>
+    </div>
+    <div class="wide stack">
+      <figure>
+        <img src="static/images/fine_main.jpg" alt="A dress growing sleeves; a jumpsuit losing its straps and bodice until it becomes trousers; a T-shirt becoming sleeveless, then a wide-strap and a thin-strap tank top, then strapless.">
+        <figcaption>Top: sleeves grow on a dress. Middle: a jumpsuit loses its straps, then its bodice, and becomes trousers. Bottom: a T-shirt becomes sleeveless, then a tank top with wide and then thin straps, then strapless.</figcaption>
+      </figure>
+      <figure>
+        <img src="static/images/fine_more.jpg" alt="Left: two T-shirts become sleeveless, strappy and strapless tops, and a jumpsuit loses its straps. Right: sleeves growing on a jumpsuit, a jumpsuit hem growing, and a skirt being shortened.">
+        <figcaption>Left: sleeves, shoulders and straps removed step by step on two tops, and straps removed on a jumpsuit. Right: sleeves grown, a hem grown from shorts to full length, and a skirt shortened.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="text">
+      <h2>Fits every body shape</h2>
+      <p>The same garment adapts to short, tall, slim and heavy bodies of either gender without passing through the body.</p>
+    </div>
+    <figure class="wide">
+      <img src="static/images/bodyshape1.jpg" alt="Five garments, each shown on five bodies from short and slim to tall and heavy.">
+      <figcaption>Each row is one garment on five different bodies.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="text">
+      <h2>Layered clothing from scans</h2>
+      <p>Given a scan with clothing labels, TailorFlow fits each layer separately, including the parts hidden under outer garments.</p>
+    </div>
+    <div class="wide stack">
+      <figure class="lab nr">
+        <div class="cols"><span style="--x:9.8%">Scan</span><span class="us" style="--x:25%">Ours</span><span style="--x:42.2%">Scan</span><span class="us" style="--x:62.5%">Ours</span><span style="--x:81.5%">Scan</span><span class="us" style="--x:95.5%">Ours</span></div>
+        <img src="static/images/scan.jpg" alt="Three THuman2.0 scans, each next to its fitted body and clothing layers.">
+        <figcaption>THuman2.0 scans and our fitted body with separate garment layers.</figcaption>
+      </figure>
+      <figure class="lab nr">
+        <div class="cols"><span style="--x:10.8%">Scan</span><span style="--x:30.5%">Segmentation</span><span style="--x:51.1%">DrapeNet</span><span style="--x:72.4%">GALA</span><span class="us" style="--x:91.9%">Ours</span></div>
+        <img src="static/images/scan_comp.jpg" alt="Input scan, segmentation, DrapeNet fit, GALA layers and our layers for a three-layer outfit.">
+        <figcaption>A three-layer outfit: a DrapeNet-based fit cannot separate the layers and GALA produces thick volumes, while ours recovers each garment.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="text">
+      <h2>Comparison with prior models</h2>
+      <p>Prior clothing models each cover one category. We pick garments of a similar style for both and interpolate between them. The middle column interpolates between the outer two.</p>
+    </div>
+    <div class="wide comp">
+      <figure class="lab" style="--a:1.59"><div class="rows"><span style="--y:25%">NeuralABC</span><span class="us" style="--y:75%">Ours</span></div><img src="static/images/comp_neuralabc.jpg" alt="Dress interpolation: NeuralABC (top) with holes, ours (bottom)."></figure>
+      <figure class="lab" style="--a:1.005"><div class="rows"><span style="--y:25%">SMPLicit</span><span class="us" style="--y:75%">Ours</span></div><img src="static/images/comp_smplicit.jpg" alt="Shorts interpolation: SMPLicit (top) with torn surfaces, ours (bottom)."></figure>
+      <figure class="lab" style="--a:1.24"><div class="rows"><span style="--y:25%">ISP</span><span class="us" style="--y:75%">Ours</span></div><img src="static/images/comp_isp.jpg" alt="Skirt interpolation: ISP (top), ours (bottom)."></figure>
+    </div>
+    <div class="wide stack">
+      <figure class="lab">
+        <div class="rows"><span style="--y:25%">SMPLicit</span><span class="us" style="--y:75%">Ours</span></div>
+        <img src="static/images/comp_shirt.jpg" alt="A shirt on five bodies from slim to heavy: SMPLicit (top) with holes and collisions, ours (bottom).">
+        <figcaption>A long-sleeve shirt on bodies from slim to heavy. SMPLicit tears and collides with the body; ours follows the body.</figcaption>
+      </figure>
+      <figure class="lab nr">
+        <div class="cols two"><span class="hi" style="--x:24.5%">Skirts</span><span class="hi" style="--x:75.5%">Shirts</span><span style="--x:7.8%">Target</span><span style="--x:24.2%">ISP</span><span class="us" style="--x:41.1%">Ours</span><span style="--x:59.0%">Target</span><span style="--x:75.7%">ISP</span><span class="us" style="--x:92.3%">Ours</span></div>
+        <img src="static/images/recon.jpg" alt="Skirts and shirts: target, ISP reconstruction and ours, from the front and the side.">
+        <figcaption>Reconstruction of unseen garments, each from the front and the side.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="text">
+      <h2>Results</h2>
+      <p>All numbers are computed on held-out CLOTH3D garments.</p>
+    </div>
+    <div class="wide tables">
+      <figure>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th></th><th colspan="2">Upper</th><th colspan="2">Lower</th><th colspan="2">Skirt</th><th colspan="2">Dress / Jumpsuit</th></tr>
+              <tr><th>1-NNA (%, 50 is ideal)</th><th>CD</th><th>EMD</th><th>CD</th><th>EMD</th><th>CD</th><th>EMD</th><th>CD</th><th>EMD</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>SMPLicit</td><td>85.2</td><td>76.7</td><td>89.1</td><td>76.7</td><td>94.8</td><td>86.4</td><td>–</td><td>–</td></tr>
+              <tr><td>DIG</td><td>82.3</td><td>78.9</td><td>68.2</td><td>58.1</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>
+              <tr><td>DrapeNet</td><td>83.2</td><td>70.3</td><td>75.6</td><td>61.1</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>
+              <tr><td>NeuralABC</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>63.2</td><td>58.4</td></tr>
+              <tr><td>ISP</td><td>91.8</td><td>86.7</td><td>97.8</td><td>96.8</td><td>97.5</td><td>97.7</td><td>–</td><td>–</td></tr>
+              <tr class="ours"><td>TailorFlow</td><td>55.7</td><td>59.3</td><td>51.0</td><td>52.9</td><td>68.4</td><td>52.3</td><td>61.3</td><td>56.2</td></tr>
+              <tr class="ref"><td>Training data</td><td>51.1</td><td>50.0</td><td>50.5</td><td>44.6</td><td>59.8</td><td>55.1</td><td>56.5</td><td>50.1</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption>Generation quality and diversity. TailorFlow is the only model that covers all four groups, and is close to the training set itself (last row).</figcaption>
+      </figure>
+      <figure>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Points inside the body (%)</th><th>SMPLicit</th><th>DIG</th><th>DrapeNet</th><th>ISP</th><th>TailorFlow</th><th>Data</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Upper</td><td>11.86</td><td>0.00</td><td>0.49</td><td>0.32</td><td><strong>0.10</strong></td><td>0.00</td></tr>
+              <tr><td>Lower</td><td>28.09</td><td>0.00</td><td>1.13</td><td>0.18</td><td><strong>0.10</strong></td><td>0.02</td></tr>
+              <tr><td>Skirt</td><td>18.45</td><td>–</td><td>–</td><td>0.17</td><td><strong>0.06</strong></td><td>0.06</td></tr>
+              <tr><td>Dress / Jumpsuit</td><td>–</td><td>–</td><td>–</td><td>–</td><td><strong>0.17</strong></td><td>0.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption>Body–cloth intersection. DIG stays outside the body because its garments are thick closed shells, at the cost of realism.</figcaption>
+      </figure>
+      <figure>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th></th><th colspan="2">Upper</th><th colspan="2">Pants</th><th colspan="2">Skirt</th></tr>
+              <tr><th>Reconstruction (cm)</th><th>CD</th><th>P2S</th><th>CD</th><th>P2S</th><th>CD</th><th>P2S</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>DrapeNet</td><td>1.522</td><td>0.631</td><td>1.585</td><td>0.739</td><td>–</td><td>–</td></tr>
+              <tr><td>ISP</td><td>2.213</td><td>1.032</td><td>2.333</td><td>1.214</td><td>6.468</td><td>2.925</td></tr>
+              <tr><td>WordRobe</td><td>1.491</td><td>0.635</td><td>1.568</td><td>0.703</td><td>–</td><td>–</td></tr>
+              <tr class="ours"><td>TailorFlow</td><td>0.457</td><td>0.145</td><td>0.449</td><td>0.140</td><td>0.627</td><td>0.187</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption>Encoding and decoding unseen garments: about three times lower error than prior garment models.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- BibTeX: uncomment and fill in.
+  <section class="text">
+    <h2>BibTeX</h2>
+    <div class="bib">
+      <button class="copy" id="copy-bib" type="button">Copy</button>
+<pre id="bibtex">@inproceedings{tailorflow,
+  title     = {TailorFlow: A Unified and Expressive Generative Model for 3D Clothing},
+  author    = {Anonymous},
+  booktitle = {Under review},
+  year      = {2026}
+}</pre>
+    </div>
+  </section>
+  -->
+
+  <footer class="text">Renders are path-traced from the model's own meshes and point clouds.</footer>
+</div>
+
+<script>
+var copyBib = document.getElementById('copy-bib');
+if (copyBib) copyBib.addEventListener('click', function () {
+  var btn = this, pre = document.getElementById('bibtex');
+  function done(t) { btn.textContent = t; setTimeout(function () { btn.textContent = 'Copy'; }, 1500); }
+  function select() { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); done('Selected'); }
+  try { navigator.clipboard.writeText(pre.textContent).then(function () { done('Copied'); }, select); } catch (e) { select(); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "Dress": {
+    "loose": "05811",
+    "loose_ease": 0.12329,
+    "tight": "00678",
+    "tight_ease": 0.02459
+  },
+  "Jumpsuit": {
+    "loose": "04464",
+    "loose_ease": 0.03184,
+    "tight": "06513",
+    "tight_ease": 0.01437
+  },
+  "Skirt": {
+    "loose": "01037",
+    "loose_ease": 0.16463,
+    "tight": "04136",
+    "tight_ease": 0.03868
+  },
+  "Trousers": {
+    "loose": "05571",
+    "loose_ease": 0.0345,
+    "tight": "00789",
+    "tight_ease": 0.01562
+  },
+  "Upper": {
+    "loose": "06297",
+    "loose_ease": 0.02235,
+    "tight": "01056",
+    "tight_ease": 0.01087
+  }
+}

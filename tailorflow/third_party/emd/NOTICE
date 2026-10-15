@@ -1,0 +1,5 @@
+emd_fast.cpp and emd_fast_kernel.cu are derived from PyTorchEMD, https://github.com/daerduoCarey/PyTorchEMD, released under the
+MIT License (as stated in its README; the standard MIT text is reproduced in LICENSE). The CUDA approximate-matching kernel was
+originally written by Haoqiang Fan; the PyTorch wrapper by Kaichun Mo. Local modifications: the matching and cost kernels are
+split across multiple blocks per pair (same matching and gradients) and use TORCH_CHECK/AT_CUDA_CHECK so they build with
+current PyTorch.

@@ -1,0 +1,26 @@
+name: tailorflow
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.10
+  - cuda-version=12.4
+  - pytorch=2.4.1=cuda*
+  - pytorch3d=0.7.7=cuda*
+  - cuda-nvcc
+  - cuda-cudart-dev
+  - libcublas-dev
+  - libcusparse-dev
+  - libcusolver-dev
+  - cxx-compiler
+  - ninja
+  - numpy
+  - scipy
+  - trimesh
+  - rtree
+  - pillow
+  - flask
+  - pip
+  - pip:
+      - embreex
+      - mitsuba==3.9.1
